@@ -1,0 +1,9 @@
+8  bR  bN  bB  bQ  bK  bB  bN  bR
+7  bp  bp  bp  bp  bp  bp  bp  bp
+6  --  --  --  --  --  --  --  --
+5  --  --  --  --  --  --  --  --
+4  --  --  --  --  --  --  --  --
+3  --  --  --  --  --  --  --  --
+2  wp  wp  wp  wp  wp  wp  wp  wp
+1  wR  wN  wB  wQ  wK  wB  wN  wR
+   a   b   c   d   e   f   g   h
