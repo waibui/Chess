@@ -10,7 +10,7 @@ class GameState():
             ["bp", "bp", "bp", "bp", "bp", "bp", "bp", "bp"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
-            ["--", "--", "wR", "--", "bB", "--", "--", "--"],
+            ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["wp", "wp", "wp", "wp", "wp", "wp", "wp", "wp"],
             ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"]
@@ -73,6 +73,14 @@ class GameState():
     
     
     def getPawnMoves(self, r, c, moves):
+        """
+        Get the pawn moves
+
+        Args:
+            r (int): The row of the square
+            c (int): The column of the square
+            moves (_list_): The list of valid moves
+        """
         if self.whiteToMove:
             if self.board[r-1][c] == "--":
                 moves.append(Move((r, c), (r-1, c), self.board))
@@ -85,27 +93,148 @@ class GameState():
                 if self.board[r-1][c+1][0] == "b":
                     moves.append(Move((r, c), (r-1, c+1), self.board))
                     
-        else: # black pawn
-            pass
-    
+        else: 
+            if self.board[r+1][c] == "--":
+                moves.append(Move((r, c), (r+1, c), self.board))
+                if r == 1 and self.board[r+2][c] == "--":
+                    moves.append(Move((r, c), (r+2, c), self.board))
+            if c-1 >= 0:
+                if self.board[r+1][c-1][0] == "w":
+                    moves.append(Move((r, c), (r+1, c-1), self.board))
+            if c+1 <= 7:
+                if self.board[r+1][c+1][0] == "w":
+                    moves.append(Move((r, c), (r+1, c+1), self.board))
+                    
     def getRookMoves(self, r, c, moves):
-        pass
+        """
+        Get the rook moves
+
+        Args:
+            r (int): The row of the square
+            c (int): The column of the square
+            moves (_list_): The list of valid moves
+        """
+        directions = ((-1, 0), (0, -1), (1, 0), (0, 1))
+        enemyColor = "b" if self.whiteToMove else "w"
+        for d in directions:
+            for i in range(1, 8):
+                endRow = r + d[0] * i
+                endCol = c + d[1] * i
+                if 0 <= endRow < 8 and 0 <= endCol < 8:
+                    endPiece = self.board[endRow][endCol]
+                    if endPiece == "--":
+                        moves.append(Move((r, c), (endRow, endCol), self.board))
+                    elif endPiece[0] == enemyColor:
+                        moves.append(Move((r, c), (endRow, endCol), self.board))
+                        break
+                    else:
+                        break
+                else:
+                    break
     
     def getKnightMoves(self, r, c, moves):
-        pass
+        """
+        Get the knight moves
+
+        Args:
+            r (int): The row of the square
+            c (int): The column of the square
+            moves (_list_): The list of valid moves
+        """
+        directions = ((-2, -1), (-2, 1), (-1, -2), (-1, 2), (1, -2), (1, 2), (2, -1), (2, 1))
+        enemyColor = "b" if self.whiteToMove else "w"
+        for d in directions:
+            for i in range(1, 8):
+                endRow = r + d[0] * i
+                endCol = c + d[1] * i
+                if 0 <= endRow < 8 and 0 <= endCol < 8:
+                    endPiece = self.board[endRow][endCol]
+                    if endPiece == "--":
+                        moves.append(Move((r, c), (endRow, endCol), self.board))
+                    elif endPiece[0] == enemyColor:
+                        moves.append(Move((r, c), (endRow, endCol), self.board))
+                        break
+                    else:
+                        break
+                else:
+                    break
     
     def getBishopMoves(self, r, c, moves):
-        pass
+        """
+        Get the bishop moves
+
+        Args:
+            r (int): The row of the square
+            c (int): The column of the square
+            moves (_list_): The list of valid moves
+        """
+        directions = ((-1, -1), (-1, 1), (1, -1), (1, 1))
+        enemyColor = "b" if self.whiteToMove else "w"
+        for d in directions:
+            for i in range(1, 8):
+                endRow = r + d[0] * i
+                endCol = c + d[1] * i
+                if 0 <= endRow < 8 and 0 <= endCol < 8:
+                    endPiece = self.board[endRow][endCol]
+                    if endPiece == "--":
+                        moves.append(Move((r, c), (endRow, endCol), self.board))
+                    elif endPiece[0] == enemyColor:
+                        moves.append(Move((r, c), (endRow, endCol), self.board))
+                        break
+                    else:
+                        break
+                else:
+                    break
     
     def getQueenMoves(self, r, c, moves):
-        pass
+        """
+        Get the queen moves
+
+        Args:
+            r (int): The row of the square
+            c (int): The column of the square
+            moves (_list_): The list of valid moves
+        """
+        directions = ((-1, 0), (0, -1), (1, 0), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1))
+        enemyColor = "b" if self.whiteToMove else "w"
+        for d in directions:
+            for i in range(1, 8):
+                endRow = r + d[0] * i
+                endCol = c + d[1] * i
+                if 0 <= endRow < 8 and 0 <= endCol < 8:
+                    endPiece = self.board[endRow][endCol]
+                    if endPiece == "--":
+                        moves.append(Move((r, c), (endRow, endCol), self.board))
+                    elif endPiece[0] == enemyColor:
+                        moves.append(Move((r, c), (endRow, endCol), self.board))
+                        break
+                    else:
+                        break
+                else:
+                    break
     
     def getKingMoves(self, r, c, moves):
-        pass
+        """
+        Get the king moves
+
+        Args:
+            r (int): The row of the square
+            c (int): The column of the square
+            moves (_list_): The list of valid moves
+        """
+        directions = ((-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1))
+        allyColor = "w" if self.whiteToMove else "b"
+        for d in directions:
+            endRow = r + d[0]
+            endCol = c + d[1]
+            if 0 <= endRow < 8 and 0 <= endCol < 8:
+                endPiece = self.board[endRow][endCol]
+                if endPiece[0] != allyColor:
+                    moves.append(Move((r, c), (endRow, endCol), self.board))
         
 class Move():
     """
-    maps keys to values
+    Move class, to keep track of player moves.
     """
     ranksToRows = {"1": 7, "2": 6, "3": 5, "4": 4, "5": 3, "6": 2, "7": 1, "8": 0}
     rowsToRanks = {v: k for k, v in ranksToRows.items()}
