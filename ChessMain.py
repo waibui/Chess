@@ -58,8 +58,10 @@ def main():
                     if move in validMoves:
                         gs.makeMove(move)
                         moveMade = True
-                    sqSelected = ()
-                    playerClicks = []
+                        sqSelected = ()
+                        playerClicks = []
+                    else:
+                        playerClicks = [sqSelected]
 
             # key handler
             elif e.type == p.KEYDOWN:
@@ -71,11 +73,11 @@ def main():
             validMoves = gs.getValidMoves()
             moveMade = False
             
-        drawGameState(screen, gs)
+        drawGameState(screen, gs, sqSelected)
         clock.tick(MAX_FPS)
         p.display.flip()
         
-def drawGameState(screen, gs):
+def drawGameState(screen, gs, sqSelected):
     """
     Responsible for all the graphics within current game state.
     
@@ -83,10 +85,10 @@ def drawGameState(screen, gs):
         screen (_pygame.Surface_): The pygame surface to draw on
         gs (GameState): The current game state
     """
-    drawBoard(screen)
+    drawBoard(screen, gs, sqSelected)
     drawPieces(screen, gs.board)
     
-def drawBoard(screen):
+def drawBoard(screen,gs , sqSelected=()):
     """
     Draw the squares on the board.
 
@@ -94,10 +96,21 @@ def drawBoard(screen):
         screen (_pygame.Surface_): The pygame surface to draw on
     """
     colors = [p.Color("white"), p.Color("gray")]
-    for r in range(DIMENSION): # rows
-        for c in range(DIMENSION): # columns
-            color = colors[((c + r) % 2)]
-            p.draw.rect(screen, color, p.Rect(c*SQ_SIZE, r*SQ_SIZE, SQ_SIZE, SQ_SIZE))
+    inCheck = gs.inCheck()
+
+    for r in range(DIMENSION):
+        for c in range(DIMENSION):
+            color = colors[((r + c) % 2)]
+            if sqSelected == (r, c):
+                color = p.Color("#ECDFCC")  # Highlight selected square
+
+            if inCheck:
+                if gs.whiteToMove and (r, c) == gs.whiteKingLocation:
+                    color = p.Color("red")
+                elif not gs.whiteToMove and (r, c) == gs.blackKingLocation:
+                    color = p.Color("red")
+
+            p.draw.rect(screen, color, p.Rect(c * SQ_SIZE, r * SQ_SIZE, SQ_SIZE, SQ_SIZE))
 
 def drawPieces(screen, board):
     """_

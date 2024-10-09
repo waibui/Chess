@@ -26,6 +26,8 @@ class GameState():
         }
         self.whiteToMove = True
         self.moveLog = []
+        self.whiteKingLocation = (7, 4)
+        self.blackKingLocation = (0, 4)
         
     def makeMove(self, move):
         """
@@ -39,6 +41,12 @@ class GameState():
         self.moveLog.append(move)
         self.whiteToMove = not self.whiteToMove
         
+        # update king's location if move
+        if move.pieceMoved == "wK":
+            self.whiteKingLocation = (move.endRow, move.endCol)
+        elif move.pieceMoved == "bK":
+            self.blackKingLocation = (move.endRow, move.endCol)
+        
     def undoMove(self):
         """
         Undo the last move
@@ -48,6 +56,11 @@ class GameState():
             self.board[move.startRow][move.startCol] = move.pieceMoved
             self.board[move.endRow][move.endCol] = move.pieceCaptured
             self.whiteToMove = not self.whiteToMove
+            # update king's location if unmove
+            if move.pieceMoved == "wK":
+                self.whiteKingLocation = (move.startRow, move.startCol)
+            elif move.pieceMoved == "bK":
+                self.blackKingLocation = (move.startRow, move.startCol)
             
     def getValidMoves(self):
         """
@@ -56,7 +69,40 @@ class GameState():
         Returns:
             _list_: The list of valid moves
         """
-        return self.getAllPossibleMoves()
+        moves = self.getAllPossibleMoves()
+        for i in range(len(moves) - 1, -1, -1): 
+            self.makeMove(moves[i])
+            self.whiteToMove = not self.whiteToMove
+            if self.inCheck():
+                moves.remove(moves[i])
+            self.whiteToMove = not self.whiteToMove
+            self.undoMove()
+        return moves
+    
+    def inCheck(self):
+        """
+        Check if the king is in check
+        """
+        if self.whiteToMove:
+            return self.squareUnderAttack(self.whiteKingLocation[0], self.whiteKingLocation[1])
+        else:
+            return self.squareUnderAttack(self.blackKingLocation[0], self.blackKingLocation[1])
+        
+    def squareUnderAttack(self, r, c):
+        """
+        Check if the square is under attack
+
+        Args:
+            r (int): The row of the square
+            c (int): The column of the square
+        """
+        self.whiteToMove = not self.whiteToMove
+        oppMoves = self.getAllPossibleMoves()
+        self.whiteToMove = not self.whiteToMove
+        for move in oppMoves:
+            if move.endRow == r and move.endCol == c:
+                return True
+        return False
     
     def getAllPossibleMoves(self):
         """
