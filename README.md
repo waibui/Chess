@@ -12,11 +12,6 @@ pygame:
 pip install pygame
 ```
 
-pygame:
-```
-pip install pygame
-```
-
 pygame_menu:
 ```
 pip install pygame_menu
@@ -25,4 +20,9 @@ pip install pygame_menu
 socket:
 ```
 pip install socket
+```
+
+clone git repo:
+```
+git clone https://github.com/waibui/Chess.git
 ```
