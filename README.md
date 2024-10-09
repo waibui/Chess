@@ -1,5 +1,7 @@
-# Introdution
-This game is built on python language, can be played on computer, play LAN.
+# Introduction
+This game is built using Python and can be played on a computer over a local area network (LAN).
+
 # Library
-* `TextInputVisualizer` which can be used to both manage and draw text input. Simply pass all events returned by `pygame.event.get()` to it every frame, and blit its `surface` attribute on the screen.
-*  `TextInputManager` that can be used to just manage inputted text, with no visual aspect. Used by `TextInputVisualizer` behind the scenes.
+* `pygame`: A cross-platform set of Python modules designed for writing video games. It provides functionalities such as graphics, sound, and input handling, making it easier to create 2D games.
+* `pygame_menu`: A library that simplifies the creation of menus in Pygame applications. It allows developers to easily implement menus, settings, and user interfaces in their games.
+* `socket`: A built-in Python library that provides low-level networking interfaces. It enables the creation of server-client applications and is essential for implementing multiplayer functionality over LAN.
