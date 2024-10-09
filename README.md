@@ -26,3 +26,9 @@ pip install socket
 ```
 git clone https://github.com/waibui/Chess.git
 ```
+
+# Usage
+Simple to use:
+```
+python3 ChessMain.py
+```
