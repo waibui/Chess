@@ -4,8 +4,14 @@ This is our main driver file. It will be responsible for handling user input and
 
 import pygame as p
 import ChessEngine
+import sys
+
+p.init()
 
 WIDTH = HEIGHT = 512
+screen = p.display.set_mode((WIDTH, HEIGHT))
+p.display.set_caption("Chess")
+
 DIMENSION = 8
 SQ_SIZE = HEIGHT // DIMENSION
 MAX_FPS = 15
@@ -18,15 +24,50 @@ def loadImages():
     pieces = ['wp', 'wR', 'wN', 'wB', 'wQ', 'wK', 'bp', 'bR', 'bN', 'bB', 'bQ', 'bK']
     for piece in pieces:
         IMAGES[piece] = p.transform.scale(
-            p.image.load("assets/images/" + piece + ".png"), (SQ_SIZE, SQ_SIZE)
+            p.image.load("assets/images/game/" + piece + ".png"), (SQ_SIZE, SQ_SIZE)
         )
 
 def main():
     """
     The main driver for our code. This will handle user input and updating the graphics
     """
-    p.init()
-    screen = p.display.set_mode((WIDTH, HEIGHT))
+    while True:
+        screen.fill(p.Color("black"))
+        
+        MENU_TEXT = getFont(34).render("MENU", True, "#b68f40")
+        MENU_RECT = MENU_TEXT.get_rect(center=(256, 100))
+
+        PLAY_BUTTON = ChessEngine.Button(image=None, pos=(256, 200), 
+                            text_input="PLAY", font=getFont(30), base_color="#ffffff", hovering_color="White")
+        OPTIONS_BUTTON = ChessEngine.Button(image=None, pos=(256, 300), 
+                            text_input="OPTIONS", font=getFont(30), base_color="#ffffff", hovering_color="White")    
+        QUIT_BUTTON = ChessEngine.Button(image=None, pos=(256, 400), 
+                            text_input="QUIT", font=getFont(30), base_color="#ffffff", hovering_color="White")
+        
+        screen.blit(MENU_TEXT, MENU_RECT)
+        
+        MENU_MOUSE_POS = p.mouse.get_pos()
+        for button in [PLAY_BUTTON, OPTIONS_BUTTON, QUIT_BUTTON]:
+            button.changeColor(MENU_MOUSE_POS)
+            button.update(screen)
+
+        for event in p.event.get():
+            if event.type == p.QUIT:
+                quitGame()
+            if event.type == p.MOUSEBUTTONDOWN:
+                if PLAY_BUTTON.checkForInput(MENU_MOUSE_POS):
+                    mainGame()
+                if OPTIONS_BUTTON.checkForInput(MENU_MOUSE_POS):
+                    pass
+                if QUIT_BUTTON.checkForInput(MENU_MOUSE_POS):
+                    quitGame()
+        
+        p.display.update()
+    
+def mainGame():
+    """
+    This is the main game loop.
+    """
     clock = p.time.Clock()
     screen.fill(p.Color("white"))
     gs = ChessEngine.GameState()
@@ -77,6 +118,13 @@ def main():
         clock.tick(MAX_FPS)
         p.display.flip()
         
+def quitGame():
+    """
+    Quit the game
+    """
+    p.quit()
+    sys.exit()
+        
 def drawGameState(screen, gs, sqSelected):
     """
     Responsible for all the graphics within current game state.
@@ -126,5 +174,17 @@ def drawPieces(screen, board):
             if piece != "--":
                 screen.blit(IMAGES[piece], p.Rect(c*SQ_SIZE, r*SQ_SIZE, SQ_SIZE, SQ_SIZE))
         
+def getFont(size):
+    """
+    Get a reference to a font
+
+    Args:
+        size (_type_): The size of the font
+
+    Returns:
+        _type_: The font
+    """
+    return p.font.Font("assets/fonts/font.ttf", size)
+
 if __name__ == "__main__":
     main()
