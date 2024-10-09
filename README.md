@@ -22,7 +22,7 @@ socket:
 pip install socket
 ```
 
-clone git repo:
+### Clone git repo:
 ```
 git clone https://github.com/waibui/Chess.git
 ```
