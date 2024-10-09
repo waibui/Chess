@@ -1,16 +1,16 @@
-"""
-This is our main driver file. It will be responsible for handling user input and displaying the current GameState object.
-"""
-
 import pygame as p
+import pygame_menu.font
+import pygame_menu.themes
 import ChessEngine
+from ChessMenu import Menu
 import sys
+import pygame_menu
 
 p.init()
 
 WIDTH = HEIGHT = 512
 screen = p.display.set_mode((WIDTH, HEIGHT))
-p.display.set_caption("Chess")
+p.display.set_caption('')
 
 DIMENSION = 8
 SQ_SIZE = HEIGHT // DIMENSION
@@ -31,39 +31,45 @@ def main():
     """
     The main driver for our code. This will handle user input and updating the graphics
     """
-    while True:
-        screen.fill(p.Color("black"))
-        
-        MENU_TEXT = getFont(34).render("MENU", True, "#b68f40")
-        MENU_RECT = MENU_TEXT.get_rect(center=(256, 100))
-
-        PLAY_BUTTON = ChessEngine.Button(image=None, pos=(256, 200), 
-                            text_input="PLAY", font=getFont(30), base_color="#ffffff", hovering_color="White")
-        OPTIONS_BUTTON = ChessEngine.Button(image=None, pos=(256, 300), 
-                            text_input="OPTIONS", font=getFont(30), base_color="#ffffff", hovering_color="White")    
-        QUIT_BUTTON = ChessEngine.Button(image=None, pos=(256, 400), 
-                            text_input="QUIT", font=getFont(30), base_color="#ffffff", hovering_color="White")
-        
-        screen.blit(MENU_TEXT, MENU_RECT)
-        
-        MENU_MOUSE_POS = p.mouse.get_pos()
-        for button in [PLAY_BUTTON, OPTIONS_BUTTON, QUIT_BUTTON]:
-            button.changeColor(MENU_MOUSE_POS)
-            button.update(screen)
-
-        for event in p.event.get():
-            if event.type == p.QUIT:
-                quitGame()
-            if event.type == p.MOUSEBUTTONDOWN:
-                if PLAY_BUTTON.checkForInput(MENU_MOUSE_POS):
-                    mainGame()
-                if OPTIONS_BUTTON.checkForInput(MENU_MOUSE_POS):
-                    pass
-                if QUIT_BUTTON.checkForInput(MENU_MOUSE_POS):
-                    quitGame()
-        
-        p.display.update()
+    play_menu = Menu(title='Play', width=WIDTH, height=HEIGHT, options={
+        'buttons':
+            {
+                'Play': playGame,
+                'Play Online': playGame,
+                'Back': pygame_menu.events.BACK
+            }
+    })
     
+    infomation_menu = Menu(title='Info', width=WIDTH, height=HEIGHT, options={
+        'inputs':
+            {
+                'Name': 'Your name',
+                'IP': '0.0.0.0',
+                'Port': '0000'
+            },
+        'buttons':
+            {
+                'Back': pygame_menu.events.BACK
+            }
+    })
+    
+    main_menu = Menu(title='Chess', width=WIDTH, height=HEIGHT, options={
+        'buttons':
+            {
+                'Play': play_menu,
+                'Your info': infomation_menu,
+                'Quit': pygame_menu.events.EXIT
+            }
+    })
+    
+    main_menu.mainloop(screen)
+
+def playGame():
+    """
+    Play the game
+    """
+    mainGame()
+
 def mainGame():
     """
     This is the main game loop.
@@ -124,24 +130,38 @@ def quitGame():
     """
     p.quit()
     sys.exit()
-        
+    
+def settingsGame():
+    """
+    Options menu
+    """
+    def set_difficulty(value, difficulty):
+        # Do the job here!
+        pass
+
+    def start_the_game():
+        # Do the job here!
+        pass
+
+    menu = pygame_menu.Menu('', 512, 512,
+                             theme=pygame_menu.themes.THEME_DARK)
+
+    menu.add.text_input('Name :', default='John Doe')
+    menu.add.selector('Difficulty :', [('Hard', 1), ('Easy', 2)], onchange=set_difficulty)
+    menu.add.button('Play', start_the_game)
+    menu.add.button('Back', pygame_menu.events.BACK)  # Đảm bảo gán đúng sự kiện cho nút "Back"
+    menu.mainloop(screen)
+
 def drawGameState(screen, gs, sqSelected):
     """
     Responsible for all the graphics within current game state.
-    
-    Args:
-        screen (_pygame.Surface_): The pygame surface to draw on
-        gs (GameState): The current game state
     """
     drawBoard(screen, gs, sqSelected)
     drawPieces(screen, gs.board)
     
-def drawBoard(screen,gs , sqSelected=()):
+def drawBoard(screen, gs, sqSelected=()):
     """
     Draw the squares on the board.
-
-    Args:
-        screen (_pygame.Surface_): The pygame surface to draw on
     """
     colors = [p.Color("white"), p.Color("gray")]
     inCheck = gs.inCheck()
@@ -161,12 +181,8 @@ def drawBoard(screen,gs , sqSelected=()):
             p.draw.rect(screen, color, p.Rect(c * SQ_SIZE, r * SQ_SIZE, SQ_SIZE, SQ_SIZE))
 
 def drawPieces(screen, board):
-    """_
+    """
     Draw the pieces on the board.
-
-    Args:
-        screen (_pygame.Surface_): The pygame surface to draw on
-        board (_ChessEngine.GameState_): The current game state
     """
     for r in range(DIMENSION): # rows
         for c in range(DIMENSION): # columns
@@ -177,12 +193,6 @@ def drawPieces(screen, board):
 def getFont(size):
     """
     Get a reference to a font
-
-    Args:
-        size (_type_): The size of the font
-
-    Returns:
-        _type_: The font
     """
     return p.font.Font("assets/fonts/font.ttf", size)
 
