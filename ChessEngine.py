@@ -4,7 +4,7 @@ for determining the valid moves at the current state. It will also keep a move l
 """
 
 class GameState():
-    def __init__(self):
+    def __init__(self) -> None:
         self.board = [
             ["bR", "bN", "bB", "bQ", "bK", "bB", "bN", "bR"],
             ["bp", "bp", "bp", "bp", "bp", "bp", "bp", "bp"],
@@ -29,7 +29,7 @@ class GameState():
         self.whiteKingLocation = (7, 4)
         self.blackKingLocation = (0, 4)
         
-    def makeMove(self, move):
+    def makeMove(self, move) -> None:
         """
         This will make the move
 
@@ -47,7 +47,7 @@ class GameState():
         elif move.pieceMoved == "bK":
             self.blackKingLocation = (move.endRow, move.endCol)
         
-    def undoMove(self):
+    def undoMove(self) -> None:
         """
         Undo the last move
         """
@@ -62,7 +62,7 @@ class GameState():
             elif move.pieceMoved == "bK":
                 self.blackKingLocation = (move.startRow, move.startCol)
             
-    def getValidMoves(self):
+    def getValidMoves(self) -> list:
         """
         Get the valid moves
 
@@ -79,7 +79,7 @@ class GameState():
             self.undoMove()
         return moves
     
-    def inCheck(self):
+    def inCheck(self) -> bool:
         """
         Check if the king is in check
         """
@@ -88,7 +88,7 @@ class GameState():
         else:
             return self.squareUnderAttack(self.blackKingLocation[0], self.blackKingLocation[1])
         
-    def squareUnderAttack(self, r, c):
+    def squareUnderAttack(self, r, c) -> bool:
         """
         Check if the square is under attack
 
@@ -104,7 +104,7 @@ class GameState():
                 return True
         return False
     
-    def getAllPossibleMoves(self):
+    def getAllPossibleMoves(self) -> list:
         """
         Get all the possible moves
         """
@@ -118,7 +118,7 @@ class GameState():
         return move
     
     
-    def getPawnMoves(self, r, c, moves):
+    def getPawnMoves(self, r, c, moves) -> None:
         """
         Get the pawn moves
 
@@ -151,7 +151,7 @@ class GameState():
                 if self.board[r+1][c+1][0] == "w":
                     moves.append(Move((r, c), (r+1, c+1), self.board))
                     
-    def getRookMoves(self, r, c, moves):
+    def getRookMoves(self, r, c, moves) -> None:
         """
         Get the rook moves
 
@@ -178,7 +178,7 @@ class GameState():
                 else:
                     break
     
-    def getKnightMoves(self, r, c, moves):
+    def getKnightMoves(self, r, c, moves) -> None:
         """
         Get the knight moves
 
@@ -205,7 +205,7 @@ class GameState():
                 else:
                     break
     
-    def getBishopMoves(self, r, c, moves):
+    def getBishopMoves(self, r, c, moves) -> None:
         """
         Get the bishop moves
 
@@ -232,7 +232,7 @@ class GameState():
                 else:
                     break
     
-    def getQueenMoves(self, r, c, moves):
+    def getQueenMoves(self, r, c, moves) -> None:
         """
         Get the queen moves
 
@@ -259,7 +259,7 @@ class GameState():
                 else:
                     break
     
-    def getKingMoves(self, r, c, moves):
+    def getKingMoves(self, r, c, moves) -> None:
         """
         Get the king moves
 
@@ -286,7 +286,7 @@ class Move():
     rowsToRanks = {v: k for k, v in ranksToRows.items()}
     filesToCols = {"a": 0, "b": 1, "c": 2, "d": 3, "e": 4, "f": 5, "g": 6, "h": 7}
     colsToFiles = {v: k for k, v in filesToCols.items()}
-    def __init__(self, startSq, endSq, board):
+    def __init__(self, startSq, endSq, board) -> None:
         self.startRow = startSq[0]
         self.startCol = startSq[1]
         self.endRow = endSq[0]
@@ -295,7 +295,7 @@ class Move():
         self.pieceCaptured = board[self.endRow][self.endCol]
         self.moveID = self.startRow * 1000 + self.startCol * 100 + self.endRow * 10 + self.endCol
         
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         """
         Check if two moves are equal
 
@@ -309,7 +309,7 @@ class Move():
             return self.moveID == other.moveID  
         return False
         
-    def getChessNotation(self):
+    def getChessNotation(self) -> str:
         """
         Get the chess notation
 
@@ -318,7 +318,7 @@ class Move():
         """
         return self.getRankFile(self.startRow, self.startCol) + self.getRankFile(self.endRow, self.endCol)
     
-    def getRankFile(self, r, c):
+    def getRankFile(self, r, c) -> str:
         """
         Get the rank and file
 
@@ -335,7 +335,7 @@ class Button():
     """
     Button class
     """
-    def __init__(self, image, pos, text_input, font, base_color, hovering_color):
+    def __init__(self, image, pos, text_input, font, base_color, hovering_color) -> None:
         """
         Initialize the button
 
@@ -359,7 +359,7 @@ class Button():
         self.rect = self.image.get_rect(center=(self.x_pos, self.y_pos))
         self.text_rect = self.text.get_rect(center=(self.x_pos, self.y_pos))
 
-    def update(self, screen):
+    def update(self, screen) -> None:
         """
         Update the button
 
@@ -370,7 +370,7 @@ class Button():
             screen.blit(self.image, self.rect)
         screen.blit(self.text, self.text_rect)
 
-    def checkForInput(self, position):
+    def checkForInput(self, position) -> bool:
         """
         Check if the button is pressed
 
@@ -384,7 +384,7 @@ class Button():
             return True
         return False
 
-    def changeColor(self, position):
+    def changeColor(self, position) -> None:
         """
         Change the color of the button
 

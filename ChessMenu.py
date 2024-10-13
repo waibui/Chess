@@ -1,8 +1,8 @@
 import pygame_menu
 
 class Menu(pygame_menu.Menu):
-    def __init__(self, title: str, width: int, height: int, theme=None, options={}):
-        super().__init__(title, width, height, theme=theme if theme else self.getMainTheme())
+    def __init__(self, title: str, width: int, height: int, theme=None, options={}, position=(0, 0, False)):
+        super().__init__(title, width, height, theme=theme if theme else self.getMainTheme(), position=position)
         self.setTitle(title)
         self.setOptions(options)
         
@@ -31,7 +31,7 @@ class Menu(pygame_menu.Menu):
         
         if 'buttons' in options:
             self._add_buttons(options['buttons'])
-    
+            
     def _add_inputs(self, inputs: dict):
         """
         Add text inputs to the menu.
@@ -73,11 +73,9 @@ class Menu(pygame_menu.Menu):
         Returns:
             main_theme (pygame_menu.Theme): The main theme with customized settings.
         """
-        bg = pygame_menu.BaseImage(
-            image_path='assets/images/menu/bg.png',
-        )
+        BACKGROUND = (34, 40, 44)
         main_theme = pygame_menu.themes.THEME_DARK.copy()
         main_theme.title = False
-        main_theme.background_color = bg
+        main_theme.background_color = BACKGROUND
         return main_theme
     
