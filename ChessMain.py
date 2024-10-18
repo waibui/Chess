@@ -1,13 +1,15 @@
 import pygame as p
-import pygame_menu
 import ChessEngine
-from ChessMenu import Menu
-from ChessSocket import ClientSocket
+from Console import print_c
+import socket
+import threading
+import json
 import sys
 
 class ChessGame:
     def __init__(self, server_ip='localhost', server_port=4953):
         p.init()
+        p.display.set_caption('Chess Game')
         self.WIDTH = self.HEIGHT = 512
         self.DIMENSION = 8
         self.SQ_SIZE = self.HEIGHT // self.DIMENSION
@@ -16,14 +18,14 @@ class ChessGame:
         self.SERVER_IP = server_ip
         self.SERVER_PORT = server_port
         self.screen = p.display.set_mode((self.WIDTH, self.HEIGHT))
-        p.display.set_caption('Chess Game')
         self.clock = p.time.Clock()
         self.sock = None
+        self.online = False
+        self.running = False
 
         self.loadImages()
-        self.menu_manager = MenuManager(self)
-        self.socket_manager = SocketManager(self)
-
+        self.start()
+        
     def loadImages(self):
         """Load the images for the chess pieces."""
         pieces = ['wp', 'wR', 'wN', 'wB', 'wQ', 'wK', 'bp', 'bR', 'bN', 'bB', 'bQ', 'bK']
@@ -34,10 +36,50 @@ class ChessGame:
 
     def start(self):
         """Start the game by showing the menu."""
-        self.menu_manager.show_main_menu()
+        self.initializeSocket()
+        self.main_menu()
+        
+    def main_menu(self):
+        """Display the main menu."""
+        while True:
+            self.screen.fill((0, 0, 0))
+            self.display_menu_options()
+            for e in p.event.get():
+                if e.type == p.QUIT:
+                    p.quit()
+                    sys.exit()
+                elif e.type == p.KEYDOWN:
+                    if e.key == p.K_1:  # Play
+                        self.play_game()
+                    elif e.key == p.K_2:  # Play Online
+                        self.join_game()
+                    elif e.key == p.K_3:  # New Game
+                        self.new_game()
+                    elif e.key == p.K_4:  # Quit
+                        p.quit()
+                        sys.exit()
+            p.display.flip()
 
-    def play_game(self):
+    def display_menu_options(self):
+        """Render the menu options on the screen."""
+        font = p.font.Font(None, 36)
+        title_surface = font.render('Main Menu', True, (255, 255, 255))
+        self.screen.blit(title_surface, (self.WIDTH // 2 - title_surface.get_width() // 2, 50))
+        
+        options = [
+            "1. Play",
+            "2. Play Online",
+            "3. New Game",
+            "4. Quit"
+        ]
+        
+        for i, option in enumerate(options):
+            option_surface = font.render(option, True, (255, 255, 255))
+            self.screen.blit(option_surface, (self.WIDTH // 2 - option_surface.get_width() // 2, 100 + i * 40))
+
+    def play_game(self, room_number=None):
         """Main game loop."""
+        print_c.info('Starting game...')
         gs = ChessEngine.GameState()
         valid_moves = gs.getValidMoves()
         move_made = False
@@ -97,7 +139,7 @@ class ChessGame:
             for c in range(self.DIMENSION):
                 color = colors[(r + c) % 2]
                 if sq_selected == (r, c):
-                    color = p.Color("#ECDFCC")  # Highlight selected square
+                    color = p.Color("#ECDFCC") 
                 if in_check:
                     if gs.whiteToMove and (r, c) == gs.whiteKingLocation:
                         color = p.Color("red")
@@ -112,51 +154,76 @@ class ChessGame:
                 piece = board[r][c]
                 if piece != "--":
                     self.screen.blit(self.IMAGES[piece], p.Rect(c * self.SQ_SIZE, r * self.SQ_SIZE, self.SQ_SIZE, self.SQ_SIZE))
-
-    def quit_game(self):
+    
+    def initializeSocket(self) -> None:
+        """Setup the socket."""
+        try:
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.sock.connect((self.SERVER_IP, self.SERVER_PORT))
+            self.running = True
+            self.handler_server_thread = threading.Thread(target=self.handlerServer, daemon=True)
+            self.handler_server_thread.start()
+            print_c.success(f"Connected to {self.SERVER_IP}:{self.SERVER_PORT}")
+        except Exception as e:
+            print_c.error(f"Error connecting to server: {e}")
+            
+    def handlerServer(self) -> None:
+        """Handle server messages."""
+        while self.running:
+            try:
+                data = self.sock.recv(1024)
+                if not data:
+                    continue
+                message = json.loads(data.decode())   
+                
+                signal = message.get('signal')
+                data = message.get('data')
+                
+                if signal == 'join':
+                    room_number = data
+                    print_c.success(f"Joined room {room_number}")
+                    
+                elif signal == 'new':
+                    room_number = data
+                    self.play_game(room_number=room_number)
+                    p.display.set_caption(f"ROOM: {str(room_number)}")
+                    print_c.success(f"New room {room_number} created")
+                    
+            except Exception as e:
+                print_c.error(f"Error connecting to server: {e}")        
+                break
+            
+    def send_message(self, message: str, signal: str, to: str = 'server') -> None:
+        """Send a message to the server or another player."""
+        if self.running:
+            message_payload = {
+                'signal': signal,
+                'data': message,
+            }
+            
+            try:
+                self.sock.send(
+                    json.dumps(message_payload).encode()
+                )
+                print_c.message(f"Sent message: {message_payload}")
+            except Exception as e:
+                print_c.error(f"Error sending message to server: {e}")
+        else:
+            print("Not connected to server")
+        
+    def join_game(self) -> None:
+        """Join a game by sending a 'join' signal to the server."""
+        self.send_message('join', 'join', 'server')
+    
+    def new_game(self) -> None:
+        """Start a new game."""
+        self.send_message('new', 'new', 'server')
+        
+    def quit_game(self) -> None:
         """Quit the game."""
         p.quit()
         sys.exit()
-
-class MenuManager:
-    def __init__(self, game):
-        self.game = game
-
-    def show_main_menu(self):
-        """Create and display the main menu."""
-        main_menu = Menu(title='Chess', width=self.game.WIDTH, height=self.game.HEIGHT, options={
-            'buttons': {
-                'Play': self.game.play_game,
-                'Settings': self.show_settings_menu,
-                'Quit': pygame_menu.events.EXIT
-            }
-        })
-        main_menu.mainloop(self.game.screen)
-
-    def show_settings_menu(self):
-        """Create and display the settings menu."""
-        setting_menu = Menu(title='Settings', width=self.game.WIDTH, height=self.game.HEIGHT, options={
-            'inputs': {
-                'Server IP': self.game.SERVER_IP,
-                'Server Port': self.game.SERVER_PORT
-            },
-            'buttons': {
-                'Apply': pygame_menu.events.EXIT
-            }
-        })
-        return setting_menu
-    
-class SocketManager:
-    def __init__(self, game):
-        self.game = game
-        self.sock = None
-
-    def connect(self):
-        """Create the socket and connect to the server."""
-        self.sock = ClientSocket()
-        self.sock.start()
-        self.sock.connect(self.game.SERVER_IP, self.game.SERVER_PORT)
-        self.sock.send_message("wai_bui")
 
 if __name__ == '__main__':
     game = ChessGame()

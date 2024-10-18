@@ -1,6 +1,9 @@
 import threading
 import customtkinter as ctk
-from ChessSocket import ServerSocket
+import socket
+import json
+import random
+from Console import print_c
 
 SERVER_ADDRESS = "localhost"
 SERVER_PORT = 4953
@@ -13,19 +16,15 @@ class Server(ctk.CTk):
         self.server_on = False
         self.server_accept = False
         self.server_ban_mode = False
+        self.sock = None
         
-        self.callbacks = {
-            "appendMessage": self.appendMessageSafe,
-            "addUserToList": self.addUserToList,
-            "removeUserFromList": self.removeUserFromList
-        }
-        
-        self.initializeGui()
         self.server_address = SERVER_ADDRESS
         self.server_port = SERVER_PORT
+        self.initializeGui()
         self.initializeSocket()
         
         self.users = {}
+        self.rooms = {}
         
         self.protocol("WM_DELETE_WINDOW", self.onWindowClose)
 
@@ -41,7 +40,72 @@ class Server(ctk.CTk):
         self.createEntryAndButton()
         self.createUserList()
         self.createFeatureButtons()
+        
+    def initializeSocket(self) -> None:
+        """Initialize server socket and set callback for client connections"""
+        try:
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.sock.bind((self.server_address, self.server_port))
+            self.sock.listen(5)
+            self.running = True
+            handler_client_connect = threading.Thread(target=self.handlerClientConnect, daemon=True)
+            handler_client_connect.start()
+            self.appendMessageSafe(f"[+] Server started at {self.server_address}:{self.server_port}")
+            print_c.success(f"Server started at {self.server_address}:{self.server_port}")
+        except Exception as e:
+            print_c.error(f"Error starting server: {e}")
+            
+    def handlerClientConnect(self) -> None:
+        """Handler for incoming client connections"""
+        while self.running:
+            try:
+                client_socket, client_address = self.sock.accept()
+                handle_client_thread = threading.Thread(target=self.handlerClient, args=(client_socket, client_address), daemon=True)
+                handle_client_thread.start()  
+                self.appendMessageSafe(f"[+] {client_address} connected")
+                print_c.success(f"Connected to {client_address}")
+            except Exception as e:
+                print_c.error(f"Error accepting client: {e}")
 
+    def handlerClient(self, client_socket: socket, client_address: tuple) -> None:
+        """Handler for accepted client connections."""
+        if client_socket not in self.users:
+            self.users[client_socket] = client_address
+            self.addUserToList(client_address)
+            print_c.success(f"Added {client_address} to user list")
+        while self.running:
+            try:
+                data = client_socket.recv(1024)
+                if not data:
+                    continue
+                message = json.loads(data.decode())
+
+                signal = message.get('signal')
+                data = message.get('data')
+
+                if signal == 'join':
+                    pass
+                    username = data
+
+                elif signal == 'new':
+                    random_room = None
+                    while True:
+                        random_room = random.randint(100000, 999999) 
+                        if random_room not in self.rooms: 
+                            self.rooms[random_room] = client_socket
+                            self.appendMessageSafe(f"[+] Room {random_room} created by {client_address}")
+                            client_socket.send(json.dumps({'signal': 'new', 'data': random_room}).encode())
+                            print_c.success(f"Room {random_room} created by {client_address}")
+                            break 
+
+                elif signal == 'quit':
+                    pass
+            except Exception as e:
+                print_c.error(f"Error in client handler: {e}")
+                break
+
+        
     def createSidebar(self) -> None:
         """Create the sidebar panel with control options"""
         self.sidebar = ctk.CTkFrame(self, width=140)
@@ -50,26 +114,7 @@ class Server(ctk.CTk):
 
         self.logo = ctk.CTkLabel(self.sidebar, text="ChessServer", font=ctk.CTkFont(size=20, weight="bold"))
         self.logo.grid(row=0, padx=20, pady=(20, 10))
-
-        self.btn_start = ctk.CTkSwitch(self.sidebar, text="Start Server", command=self.toggleServer)
-        self.btn_start.grid(row=1, padx=20, pady=10)
-
-        self.btn_accept = ctk.CTkSwitch(self.sidebar, text="Accept Connection", command=self.toggleAccept)
-        self.btn_accept.grid(row=2, padx=20, pady=10)
-
-        self.btn_ban = ctk.CTkSwitch(self.sidebar, text="Ban Mode", command=self.toggleBanMode)
-        self.btn_ban.grid(row=3, padx=20, pady=10)
-
-        self.address = ctk.CTkLabel(self.sidebar, text="Address")
-        self.address.grid(row=4, padx=20, pady=(10, 0))
-        self.entry_address = ctk.CTkEntry(self.sidebar, placeholder_text="localhost")
-        self.entry_address.grid(row=5, padx=20, pady=(10, 0))
-
-        self.port = ctk.CTkLabel(self.sidebar, text="Port")
-        self.port.grid(row=6, padx=20, pady=(10, 0))
-        self.entry_port = ctk.CTkEntry(self.sidebar, placeholder_text="4953")
-        self.entry_port.grid(row=7, padx=20, pady=(10, 0))
-
+        
         self.appearance_mode_optionemenu = ctk.CTkOptionMenu(self.sidebar, values=["Light", "Dark", "System"], command=self.onAppearanceModeChange)
         self.appearance_mode_optionemenu.grid(row=9, padx=20, pady=(10, 10))
         self.appearance_mode_optionemenu.set("System")
@@ -126,16 +171,9 @@ class Server(ctk.CTk):
     def appendMessageSafe(self, message: str) -> None:
         self.after(0, self.appendMessage, message)
 
-    def initializeSocket(self) -> None:
-        """Initialize server socket and set callback for client connections"""
-        self.sock = ServerSocket(self.server_address, self.server_port, self.callbacks)
-        self.sock.start()
-    
     def onClientConnect(self, address, client_socket) -> None:
         """Handle a new client connection and display in the chatbox"""
-        self.appendMessageSafe(f"[-] client {address[0]}:{address[1]} connected")
-        if self.server_on:
-            pass
+        pass
     
     def addUserToList(self, username: str) -> None:
         """Add a new user to the user list"""
@@ -146,31 +184,16 @@ class Server(ctk.CTk):
         """Remove a user from the user list"""
         pass
 
-    def toggleServer(self) -> None:
-        """Start or stop the server"""
-        self.server_address = self.entry_address.get().strip() if self.entry_address.get().strip() else self.server_address
-        self.server_port = self.entry_port.get().strip() if self.entry_port.get().strip() else self.server_port
-        if self.server_on:
-            self.sock.off()
-            self.server_on = False
-            self.appendMessageSafe("[-] server stopped")
-        else:
-            self.sock.on()
-            self.server_on = True
-            self.appendMessageSafe("[+] server started")
-            
     def toggleAccept(self) -> None:
         """Toggle accepting new connections"""
-        if self.server_accept:
-            self.server_accept = False
-            self.sock.accept = False
-            self.appendMessageSafe("[-] disabled accept")
-        else:
-            self.accept_thread = threading.Thread(target=self.sock.acceptClient, daemon=True)
-            self.sock.accept = True
+        if not self.server_accept:
             self.server_accept = True
-            self.accept_thread.start()
-            self.appendMessageSafe("[+] enabled accept")
+            self.appendMessageSafe("[+] Accepting new connections")
+            print_c.info("Accepting new connections")
+        else:
+            self.server_accept = False
+            self.appendMessageSafe("[-] Rejecting new connections")
+            print_c.info("Rejecting new connections")
             
     def toggleBanMode(self) -> None:
         """Toggle ban mode"""
@@ -182,16 +205,7 @@ class Server(ctk.CTk):
 
     def onMessageSend(self) -> None:
         """Send a message to all connected users"""
-        message = self.entry.get().strip()
-        if message:
-            self.appendMessageSafe(f"[Server]: {message}")
-            with self.list_user_lock:
-                for username, client_socket in self.list_user.items():
-                    if username not in self.banned_users:
-                        try:
-                            client_socket.sendall(message.encode())
-                        except Exception as e:
-                            print(f"[-] Failed to send message to {username}: {e}")
+        pass
 
     def onWindowClose(self) -> None:
         """Handle window close event"""
